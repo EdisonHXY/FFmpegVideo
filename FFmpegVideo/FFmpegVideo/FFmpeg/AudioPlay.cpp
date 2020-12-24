@@ -57,6 +57,9 @@ bool CAudioPlay::Stop()
 	}
 	m_audioq.Clear();
 	SDL_CloseAudio();
+	m_audio_clock = 0;
+	m_audio_buff_size = 0;
+	m_audio_buff_index = 0;
 	return true;
 }
 
@@ -86,7 +89,7 @@ void CAudioPlay::HandleAudioData(Uint8 *stream, int len)
 {
 	SDL_memset(stream, 0, len);
 
-	if (m_status == PLAYSTATUE_FF_PAUSE)
+	if (m_status == PLAYSTATUE_FF_PAUSE || m_stream_index < 0)
 	{
 		return;
 	}
@@ -103,8 +106,11 @@ void CAudioPlay::HandleAudioData(Uint8 *stream, int len)
 			{
 				m_audio_buff_size = 0;
 				memset(m_audio_buff, 0, m_audio_buff_size);
-				//SDL_CloseAudio();
-				//m_status = PLAYSTATUE_FF_STOP;
+				if (m_audioq.m_queue.size() <=0)
+				{
+					m_status = PLAYSTATUE_FF_Finish;
+				}
+				
 				break;
 			}
 			else

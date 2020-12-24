@@ -25,7 +25,10 @@ protected:
 public:
 	CEdit m_tipEdit;
 	CButton m_playBtn;
+	CString m_iniPath;
 	afx_msg void OnBnClickedButtonPlay();
+	static void StatusPlayCallBack(PLAYSTATUE_FF ss, void *lParam);
 	CMFCEditBrowseCtrl m_fileUrlEdit;
 	CStatic m_showZone;
+	virtual BOOL OnInitDialog();
 };

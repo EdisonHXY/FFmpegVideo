@@ -40,6 +40,7 @@ bool CVideoPlay::Stop()
 	if (m_frame)
 	{
 		av_frame_free(&m_frame);
+		m_frame = nullptr;
 	}
 	if (m_displayFrame && m_displayFrame->data[0])
 	{
@@ -48,18 +49,40 @@ bool CVideoPlay::Stop()
 	if (m_displayFrame)
 	{
 		av_frame_free(&m_displayFrame);
+		m_displayFrame = nullptr;
+	}
+
+	if (m_window)
+	{
+		SDL_DestroyWindow(m_window);
+		m_window = nullptr;
+	}
+	if (m_renderer)
+	{
+		SDL_DestroyRenderer(m_renderer);
+		m_renderer = nullptr;
+	}
+
+	if (m_bmp)
+	{
+		SDL_DestroyTexture(m_bmp);
+		m_bmp = nullptr;
 	}
 
 	m_videoPackQ.Clear();
 	m_videoFrameQ.Clear();
-	SDL_Quit();
-
+	m_frame_timer = 0.0;
+	m_frame_last_delay = 0.0;
+	m_frame_last_pts = 0.0;
+	m_video_clock = 0.0;
 	return true;
 }
 
 void CVideoPlay::Play(void *lwnd, int width, int height)
 {
 	m_status = PLAYSTATUE_FF_ING;
+	
+	
 	m_window = SDL_CreateWindowFrom(lwnd);
 	m_renderer = SDL_CreateRenderer(m_window, -1, 0);
 
@@ -70,7 +93,7 @@ void CVideoPlay::Play(void *lwnd, int width, int height)
 	m_rect.y = 0;
 	m_rect.w = width;
 	m_rect.h = height;
-
+	
 	m_frame = av_frame_alloc();
 	m_displayFrame = av_frame_alloc();
 
@@ -87,7 +110,7 @@ void CVideoPlay::Play(void *lwnd, int width, int height)
  
  	ScheduleRefresh(40); // start display
 
-
+	SDL_ShowWindow(m_window);
 }
 
 double CVideoPlay::Synchronize(AVFrame *srcFrame, double pts)
@@ -121,6 +144,7 @@ void CVideoPlay::RefreshVideo(double dtime)
 
 	if (m_videoFrameQ.m_queue.empty())
 	{
+		//m_status = PLAYSTATUE_FF_STOP;
 		ScheduleRefresh(1);
 	}
 	else

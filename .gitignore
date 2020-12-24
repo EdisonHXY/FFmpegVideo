@@ -1,0 +1,14 @@
+
+FFmpegVideo/.vs/FFmpegVideo/v14/.suo
+*.pdb
+*.ilk
+*.obj
+*.opendb
+*.db
+*.log
+*.tlog
+*.pch
+FFmpegVideo/FFmpegVideo/Debug/FFmpegVideo.res
+*.idb
+*.user
+FFmpegVideo/ipch/FFMPEGVIDEO-39155157/FFMPEGVIDEO-86d878.ipch

@@ -17,6 +17,11 @@ CCenterManager * CCenterManager::GetInstance()
 	return &cen;
 }
 
+void CCenterManager::SetStausCall(fStatusPlayCallBack cb, void *lParm)
+{
+	m_play.SetStausCall(cb, lParm);
+}
+
 int CCenterManager::Play(const char *szFileUrl, void *lwnd, CRect wndRc)
 {
 	return m_play.Play(szFileUrl, lwnd, wndRc);

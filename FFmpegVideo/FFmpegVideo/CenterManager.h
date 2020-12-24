@@ -6,6 +6,8 @@ public:
 	~CCenterManager();
 	static CCenterManager *GetInstance();
 
+	void SetStausCall(fStatusPlayCallBack cb, void *lParm);
+
 	//²¥·Å
 	int Play(const char *szFileUrl, void *lwnd, CRect wndRc);
 	//Í£Ö¹

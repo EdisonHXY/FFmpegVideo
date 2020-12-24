@@ -13,12 +13,15 @@ extern "C"
 #include <iostream>
 using namespace std;
 
-
+typedef void(*fStatusPlayCallBack)(PLAYSTATUE_FF ss, void *lParam);
 class CFFmpeg_Play
 {
 public:
 	CFFmpeg_Play();
 	~CFFmpeg_Play();
+
+	//设置回调
+	void SetStausCall(fStatusPlayCallBack cb, void *lParm);
 
 	//播放
 	int Play(const char *szFileUrl, void *lwnd, CRect wndRc);
@@ -35,6 +38,8 @@ private:
 	int m_showW;
 	int m_showH;
 	bool m_bStop;
+	fStatusPlayCallBack m_statusCB;
+	void *m_statusCBParam;
 private:
 	bool OpenUrl(const char *szFileUrl);
 private:

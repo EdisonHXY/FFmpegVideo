@@ -38,7 +38,7 @@ bool CPackQueue::PopQueue(AVPacket *packet, bool block)
 	bool ret = false;
 
 	SDL_LockMutex(m_mutex);
-	while (true)
+	//while (true)
 	{
 		if (!m_queue.empty())
 		{
@@ -56,11 +56,11 @@ bool CPackQueue::PopQueue(AVPacket *packet, bool block)
 			SDL_UnlockMutex(m_mutex);
 			return true;
 		}
-		else
-		{
-			SDL_CondWait(m_cond, m_mutex);
-
-		}
+// 		else
+// 		{
+// 			SDL_CondWait(m_cond, m_mutex);
+// 
+// 		}
 	}
 	
 	

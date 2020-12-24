@@ -6,11 +6,19 @@
 CFFmpeg_Play::CFFmpeg_Play()
 {
 	m_pFormatCtx = NULL;
+	m_statusCB = nullptr;
+	m_statusCBParam = nullptr;
 }
 
 
 CFFmpeg_Play::~CFFmpeg_Play()
 {
+}
+
+void CFFmpeg_Play::SetStausCall(fStatusPlayCallBack cb, void *lParm)
+{
+	m_statusCB = cb;
+	m_statusCBParam = lParm;
 }
 
 int CFFmpeg_Play::Play(const char *szFileUrl, void *lwnd, CRect wndRc)
@@ -119,7 +127,7 @@ void CFFmpeg_Play::ExectPlayURL()
 	do
 	{
 		av_register_all();
-		SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_TIMER);
+		int nRet = SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_TIMER);
 		//打开文件
 		bRet = OpenUrl(m_fileURL.c_str());
 		if (!bRet)
@@ -138,6 +146,11 @@ void CFFmpeg_Play::ExectPlayURL()
 		//创建视频的线程进行播放
 		 m_videoPlay.Play(m_showHand,m_showW, m_showH);
 
+		 if (m_statusCB)
+		 {
+			 m_statusCB(PLAYSTATUE_FF_ING, m_statusCBParam);
+		 }
+
 		//事件的循环
 		SDL_Event event;
 		bool bLoop = true;
@@ -153,6 +166,12 @@ void CFFmpeg_Play::ExectPlayURL()
 				break;
 
 			case FF_REFRESH_EVENT:
+				if ((m_audioPlay.GetStatus() == PLAYSTATUE_FF_Finish))
+				{
+					SDL_CloseAudio();
+					bLoop = false;
+					break;
+				}
 				m_videoPlay.RefreshVideo(m_audioPlay.GetAudioClock());
 				break;
 
@@ -165,7 +184,10 @@ void CFFmpeg_Play::ExectPlayURL()
 
 	//清理
 	DoExit();
-
+	if (m_statusCB)
+	{
+		m_statusCB(PLAYSTATUE_FF_Finish, m_statusCBParam);
+	}
 
 }
 

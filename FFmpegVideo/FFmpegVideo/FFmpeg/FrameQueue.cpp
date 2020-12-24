@@ -41,7 +41,7 @@ bool CFrameQueue::PopQueue(AVFrame **frame)
 	bool ret = true;
 
 	SDL_LockMutex(m_mutex);
-	while (true)
+	//while (true)
 	{
 		if (!m_queue.empty())
 		{
@@ -60,10 +60,10 @@ bool CFrameQueue::PopQueue(AVFrame **frame)
 			SDL_UnlockMutex(m_mutex);
 			return true;
 		}
-		else
-		{
-			SDL_CondWait(m_cond, m_mutex);
-		}
+// 		else
+// 		{
+// 			SDL_CondWait(m_cond, m_mutex);
+// 		}
 
 	}
 	
