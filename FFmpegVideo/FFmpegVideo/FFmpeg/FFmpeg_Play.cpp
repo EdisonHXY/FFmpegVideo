@@ -137,15 +137,17 @@ void CFFmpeg_Play::ExectPlayURL()
 		m_bStop = false;
 		//读取文件里的内容
 		SDL_CreateThread(decode_thread, "", this); // 创建解码线程，读取packet到队列中缓存
-		//创建音频的线程进行播放
+		
+												   //创建视频的线程进行播放
+		m_videoPlay.Play(m_showHand, m_showW, m_showH);
+
+												   //创建音频的线程进行播放
 		bRet = m_audioPlay.Play();
 		if (!bRet)
 		{
 			break;
 		}
-		//创建视频的线程进行播放
-		 m_videoPlay.Play(m_showHand,m_showW, m_showH);
-
+		
 		 if (m_statusCB)
 		 {
 			 m_statusCB(PLAYSTATUE_FF_ING, m_statusCBParam);

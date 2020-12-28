@@ -13,6 +13,8 @@ CFrameQueue::CFrameQueue()
 
 CFrameQueue::~CFrameQueue()
 {
+	SDL_DestroyMutex(m_mutex);
+	SDL_DestroyCond(m_cond);
 }
 
 bool CFrameQueue::PushQueue(const AVFrame *frame)
@@ -77,8 +79,12 @@ bool CFrameQueue::Clear()
 	SDL_LockMutex(m_mutex);
 	while (!m_queue.empty())
 	{
+		auto tmp = m_queue.front();
 		m_queue.pop();
+
+		av_frame_free(&tmp);
 	}
+	m_nb_frames = 0;
 	SDL_UnlockMutex(m_mutex);
 	return true;
 }

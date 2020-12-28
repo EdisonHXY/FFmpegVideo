@@ -18,25 +18,22 @@ CVideoPlay::CVideoPlay()
 	m_displayFrame = nullptr;
 	m_window = nullptr;
 	m_renderer = nullptr;
-
+	m_stopLock = SDL_CreateMutex();
+	m_decodThread = nullptr;
 }
 
 
 CVideoPlay::~CVideoPlay()
 {
 	Stop();
-
+	SDL_DestroyMutex(m_stopLock);
 }
 
 bool CVideoPlay::Stop()
 {
 	m_status = PLAYSTATUE_FF_STOP;
-	if (m_video_ctx)
-	{
-		avcodec_close(m_video_ctx);
-		m_video_ctx = NULL;
-	}
-
+	Sleep(500);
+	SDL_LockMutex(m_stopLock);
 	if (m_frame)
 	{
 		av_frame_free(&m_frame);
@@ -68,13 +65,22 @@ bool CVideoPlay::Stop()
 		SDL_DestroyTexture(m_bmp);
 		m_bmp = nullptr;
 	}
+	if (m_video_ctx)
+	{
 
+		avcodec_close(m_video_ctx);
+		avcodec_free_context(&m_video_ctx);
+		m_video_ctx = NULL;
+	}
 	m_videoPackQ.Clear();
 	m_videoFrameQ.Clear();
 	m_frame_timer = 0.0;
 	m_frame_last_delay = 0.0;
 	m_frame_last_pts = 0.0;
 	m_video_clock = 0.0;
+	m_stream_index = -1;
+	m_stream = nullptr;
+	SDL_UnlockMutex(m_stopLock);
 	return true;
 }
 
@@ -106,7 +112,7 @@ void CVideoPlay::Play(void *lwnd, int width, int height)
 
 	avpicture_fill((AVPicture*)m_displayFrame, buffer, (AVPixelFormat)m_displayFrame->format, m_displayFrame->width, m_displayFrame->height);
 
- 	SDL_CreateThread(Decode, "", this);
+	m_decodThread = SDL_CreateThread(Decode, "", this);
  
  	ScheduleRefresh(40); // start display
 
@@ -149,6 +155,7 @@ void CVideoPlay::RefreshVideo(double dtime)
 	}
 	else
 	{
+		SDL_LockMutex(m_stopLock);
 		m_videoFrameQ.PopQueue(&m_frame);
 		// 将视频同步到音频上，计算下一帧的延迟时间
 		double current_pts = *(double*)m_frame->opaque;
@@ -196,7 +203,7 @@ void CVideoPlay::RefreshVideo(double dtime)
 
 		sws_freeContext(sws_ctx);
 		av_frame_unref(m_frame);
-
+		SDL_UnlockMutex(m_stopLock);
 	}
 	
 	
@@ -217,6 +224,7 @@ void CVideoPlay::HanldeDecode()
 	double pts;
 	while (m_status != PLAYSTATUE_FF_STOP)
 	{
+
 		if (m_videoPackQ.m_queue.empty())
 		{
 			continue;

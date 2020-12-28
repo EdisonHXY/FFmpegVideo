@@ -14,6 +14,8 @@ CPackQueue::CPackQueue()
 
 CPackQueue::~CPackQueue()
 {
+	SDL_DestroyMutex(m_mutex);
+	SDL_DestroyCond(m_cond);
 }
 
 bool CPackQueue::PushQueue(const AVPacket *packet)
@@ -73,8 +75,13 @@ bool CPackQueue::Clear()
 	SDL_LockMutex(m_mutex);
 	while (!m_queue.empty())
 	{
+		AVPacket pkt = m_queue.front();
 		m_queue.pop();
+
+		av_packet_unref(&pkt);
 	}
+	m_nb_packets = 0;
+	m_size = 0;
 	SDL_UnlockMutex(m_mutex);
 	return true;
 }

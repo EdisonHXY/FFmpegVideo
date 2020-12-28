@@ -40,6 +40,8 @@ public:
 	SDL_Rect m_rect;
 
 	PLAYSTATUE_FF m_status;
+	SDL_mutex* m_stopLock;
+	SDL_Thread *m_decodThread;
 private:
 	double Synchronize(AVFrame *srcFrame, double pts);
 	static int Decode(void *arg);

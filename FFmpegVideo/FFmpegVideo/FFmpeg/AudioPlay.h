@@ -36,6 +36,7 @@ public:
 
 	AVCodecContext *m_audio_ctx; // 已经调用avcodec_open2打开
 	PLAYSTATUE_FF m_status;
+	SDL_mutex* m_stopLock;
 private:
 	static void audio_callback(void* userdata, Uint8 *stream, int len);
 	void HandleAudioData(Uint8 *stream, int len);

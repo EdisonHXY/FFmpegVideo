@@ -16,6 +16,7 @@ CAudioPlay::CAudioPlay() :BUFFER_SIZE(192000)
 	m_audio_buff_index = 0;
 
 	m_status = PLAYSTATUE_FF_STOP;
+	m_stopLock = SDL_CreateMutex();
 }
 
 
@@ -24,6 +25,8 @@ CAudioPlay::~CAudioPlay()
 
 	if (m_audio_buff)
 		delete[] m_audio_buff;
+
+	SDL_DestroyMutex(m_stopLock);
 }
 
 bool CAudioPlay::Play()
@@ -48,18 +51,27 @@ bool CAudioPlay::Play()
 
 bool CAudioPlay::Stop()
 {
+	SDL_PauseAudio(1);
 	m_status = PLAYSTATUE_FF_STOP;
-	if (m_audio_ctx)
-	{
-		// Close the codec
-		avcodec_close(m_audio_ctx);
-		m_audio_ctx = NULL;
-	}
+	SDL_LockMutex(m_stopLock);
+
 	m_audioq.Clear();
+	
 	SDL_CloseAudio();
 	m_audio_clock = 0;
 	m_audio_buff_size = 0;
 	m_audio_buff_index = 0;
+
+	if (m_audio_ctx)
+	{
+		// Close the codec
+		avcodec_close(m_audio_ctx);
+		avcodec_free_context(&m_audio_ctx);
+		m_audio_ctx = NULL;
+	}
+	m_stream_index = -1;
+	m_stream = nullptr;
+	SDL_UnlockMutex(m_stopLock);
 	return true;
 }
 
@@ -82,7 +94,9 @@ double CAudioPlay::GetAudioClock()
 void CAudioPlay::audio_callback(void* userdata, Uint8 *stream, int len)
 {
 	CAudioPlay *p = (CAudioPlay*)userdata;
+	SDL_LockMutex(p->m_stopLock);
 	p->HandleAudioData(stream,len);
+	SDL_UnlockMutex(p->m_stopLock);
 }
 
 void CAudioPlay::HandleAudioData(Uint8 *stream, int len)
