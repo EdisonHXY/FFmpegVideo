@@ -25,6 +25,7 @@ enum PLAYSTATUE_FF
 #define FF_QUIT_EVENT    (SDL_USEREVENT + 2)
 #define FF_PAUSE_EVENT    (SDL_USEREVENT + 3)
 #define FF_REFRESH_EVENT    (SDL_USEREVENT + 4)
+#define FF_ContinuPlay_EVENT    (SDL_USEREVENT + 5)
 
 
 class CFrameQueue

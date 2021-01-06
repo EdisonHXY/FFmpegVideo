@@ -31,4 +31,8 @@ public:
 	CMFCEditBrowseCtrl m_fileUrlEdit;
 	CStatic m_showZone;
 	virtual BOOL OnInitDialog();
+	CButton m_loopBtn;
+	afx_msg void OnBnClickedCheck1();
+	CButton m_pauseBtn;
+	afx_msg void OnBnClickedButton1();
 };

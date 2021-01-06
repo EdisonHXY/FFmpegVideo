@@ -31,3 +31,23 @@ void CCenterManager::Stop()
 {
 	return m_play.Stop();
 }
+
+void CCenterManager::Pause()
+{
+	return m_play.Pause();
+}
+
+void CCenterManager::ContinuePlay()
+{
+	return m_play.ContinuePlay();
+}
+
+void CCenterManager::SetLoopStatus(bool bOpen)
+{
+	return m_play.SetLoopStatus(bOpen);
+}
+
+PLAYSTATUE_FF CCenterManager::GetPlayStatus()
+{
+	return m_play.GetPlayStatus();
+}

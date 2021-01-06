@@ -8,11 +8,14 @@ CFFmpeg_Play::CFFmpeg_Play()
 	m_pFormatCtx = NULL;
 	m_statusCB = nullptr;
 	m_statusCBParam = nullptr;
+	m_playLoop = false;
+	m_currentStatus = PLAYSTATUE_FF_STOP;
 }
 
 
 CFFmpeg_Play::~CFFmpeg_Play()
 {
+	Stop();
 }
 
 void CFFmpeg_Play::SetStausCall(fStatusPlayCallBack cb, void *lParm)
@@ -46,6 +49,24 @@ void CFFmpeg_Play::Pause()
 
 	event.type = FF_PAUSE_EVENT;
 	SDL_PushEvent(&event);
+}
+
+void CFFmpeg_Play::ContinuePlay()
+{
+	SDL_Event event;
+
+	event.type = FF_ContinuPlay_EVENT;
+	SDL_PushEvent(&event);
+}
+
+void CFFmpeg_Play::SetLoopStatus(bool bOpen)
+{
+	m_playLoop = bOpen;
+}
+
+PLAYSTATUE_FF CFFmpeg_Play::GetPlayStatus()
+{
+	return m_currentStatus;
 }
 
 bool CFFmpeg_Play::OpenUrl(const char *szFileUrl)
@@ -117,13 +138,31 @@ void CFFmpeg_Play::DoExit()
 int CFFmpeg_Play::ThreadPlay(void *arg)
 {
 	CFFmpeg_Play *p = (CFFmpeg_Play*)arg;
-	p->ExectPlayURL();
+
+	do 
+	{
+		int nRet = p->ExectPlayURL();
+
+		if (nRet < 0)
+		{
+			//发生错误了 或者 停止了
+			break;
+		}
+
+	} while (p->m_playLoop);
+
+	if (p->m_statusCB)
+	{
+		p->m_statusCB(PLAYSTATUE_FF_Finish, p->m_statusCBParam);
+	}
+	p->m_currentStatus = PLAYSTATUE_FF_Finish;
 	return 0;
 }
 
-void CFFmpeg_Play::ExectPlayURL()
+int CFFmpeg_Play::ExectPlayURL()
 {
 	bool bRet = false;
+	int nRet = 0;
 	do
 	{
 		av_register_all();
@@ -132,9 +171,11 @@ void CFFmpeg_Play::ExectPlayURL()
 		bRet = OpenUrl(m_fileURL.c_str());
 		if (!bRet)
 		{
+			nRet = -1;
 			break;
 		}
 		m_bStop = false;
+		m_currentStatus = PLAYSTATUE_FF_ING;
 		//读取文件里的内容
 		SDL_CreateThread(decode_thread, "", this); // 创建解码线程，读取packet到队列中缓存
 		
@@ -145,6 +186,7 @@ void CFFmpeg_Play::ExectPlayURL()
 		bRet = m_audioPlay.Play();
 		if (!bRet)
 		{
+			nRet = -2;
 			break;
 		}
 		
@@ -165,8 +207,8 @@ void CFFmpeg_Play::ExectPlayURL()
 			case SDL_QUIT:
 				bLoop = false;
 				DoExit();
-				break;
-
+				nRet = -5;
+				return nRet;
 			case FF_REFRESH_EVENT:
 				if ((m_audioPlay.GetStatus() == PLAYSTATUE_FF_Finish))
 				{
@@ -176,7 +218,24 @@ void CFFmpeg_Play::ExectPlayURL()
 				}
 				m_videoPlay.RefreshVideo(m_audioPlay.GetAudioClock());
 				break;
-
+			case FF_ContinuPlay_EVENT:
+				m_audioPlay.ControlPlayPause(false);
+				m_videoPlay.ControlPlayPause(false);
+				m_currentStatus = PLAYSTATUE_FF_ING;
+				if (m_statusCB)
+				{
+					m_statusCB(PLAYSTATUE_FF_ING, m_statusCBParam);
+				}
+				break;
+			case  FF_PAUSE_EVENT:
+				m_currentStatus = PLAYSTATUE_FF_PAUSE;
+				m_audioPlay.ControlPlayPause(true);
+				m_videoPlay.ControlPlayPause(true);
+				if (m_statusCB)
+				{
+					m_statusCB(PLAYSTATUE_FF_PAUSE,m_statusCBParam);
+				}
+				break;
 			default:
 				break;
 			}
@@ -186,11 +245,9 @@ void CFFmpeg_Play::ExectPlayURL()
 
 	//清理
 	DoExit();
-	if (m_statusCB)
-	{
-		m_statusCB(PLAYSTATUE_FF_Finish, m_statusCBParam);
-	}
+	
 
+	return nRet;
 }
 
 int CFFmpeg_Play::decode_thread(void *arg)
@@ -211,7 +268,11 @@ void CFFmpeg_Play::ExectDecode()
 // 		{
 // 			continue;
 // 		}
-
+		if (m_currentStatus != PLAYSTATUE_FF_ING)
+		{
+			Sleep(1);
+			continue;
+		}
 		int ret = av_read_frame(m_pFormatCtx, packet);
 		if (ret < 0)
 		{

@@ -75,6 +75,20 @@ bool CAudioPlay::Stop()
 	return true;
 }
 
+void CAudioPlay::ControlPlayPause(bool bPause)
+{
+	if (bPause)
+	{
+		m_status = PLAYSTATUE_FF_PAUSE;
+		SDL_PauseAudio(1);
+	}
+	else
+	{
+		m_status = PLAYSTATUE_FF_ING;
+		SDL_PauseAudio(0);
+	}
+}
+
 PLAYSTATUE_FF CAudioPlay::GetStatus()
 {
 	return m_status;
@@ -82,6 +96,7 @@ PLAYSTATUE_FF CAudioPlay::GetStatus()
 
 double CAudioPlay::GetAudioClock()
 {
+
 	int hw_buf_size = m_audio_buff_size - m_audio_buff_index;
 	int bytes_per_sec = m_stream->codec->sample_rate * m_audio_ctx->channels * 2;
 
@@ -148,7 +163,7 @@ void CAudioPlay::HandleAudioData(Uint8 *stream, int len)
 
 int CAudioPlay::audio_decode_frame(uint8_t *audio_buf, int buf_size)
 {
-	AVFrame *frame = av_frame_alloc();
+	
 	int data_size = 0;
 	AVPacket pkt;
 	SwrContext *swr_ctx = nullptr;
@@ -166,7 +181,7 @@ int CAudioPlay::audio_decode_frame(uint8_t *audio_buf, int buf_size)
 	int ret = avcodec_send_packet(m_audio_ctx, &pkt);
 	if (ret < 0 && ret != AVERROR(EAGAIN) && ret != AVERROR_EOF)
 		return -1;
-
+	AVFrame *frame = av_frame_alloc();
 	ret = avcodec_receive_frame(m_audio_ctx, frame);
 	if (ret < 0 && ret != AVERROR_EOF)
 		return -1;

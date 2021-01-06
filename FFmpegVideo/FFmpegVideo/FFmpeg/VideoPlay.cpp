@@ -119,6 +119,16 @@ void CVideoPlay::Play(void *lwnd, int width, int height)
 	SDL_ShowWindow(m_window);
 }
 
+void CVideoPlay::ControlPlayPause(bool bPause)
+{
+	m_status = bPause ?  PLAYSTATUE_FF_PAUSE : PLAYSTATUE_FF_ING;
+
+	if (!bPause)
+	{
+		m_frame_timer = static_cast<double>(av_gettime()) / 1000000.0;
+	}
+}
+
 double CVideoPlay::Synchronize(AVFrame *srcFrame, double pts)
 {
 	double frame_delay;
@@ -142,12 +152,19 @@ PLAYSTATUE_FF CVideoPlay::GetStatus()
 
 void CVideoPlay::RefreshVideo(double dtime)
 {
-	if (m_stream_index < 0)
+	if (m_status == PLAYSTATUE_FF_PAUSE)
 	{
 		ScheduleRefresh(100);
 		return;
 	}
 
+	if (m_stream_index < 0 || m_status != PLAYSTATUE_FF_ING)
+	{
+		ScheduleRefresh(100);
+		return;
+	}
+
+	
 	if (m_videoFrameQ.m_queue.empty())
 	{
 		//m_status = PLAYSTATUE_FF_STOP;
@@ -176,9 +193,15 @@ void CVideoPlay::RefreshVideo(double dtime)
 		if (fabs(diff) < NOSYNC_THRESHOLD) // 不同步
 		{
 			if (diff <= -threshold) // 慢了，delay设为0
+			{
 				delay = 0;
+			}	
 			else if (diff >= threshold) // 快了，加倍delay
-				delay *= 2;
+			{
+				delay = diff;
+
+			}
+				
 		}
 		m_frame_timer += delay;
 		double actual_delay = m_frame_timer - static_cast<double>(av_gettime()) / 1000000.0;
@@ -225,8 +248,9 @@ void CVideoPlay::HanldeDecode()
 	while (m_status != PLAYSTATUE_FF_STOP)
 	{
 
-		if (m_videoPackQ.m_queue.empty())
+		if (m_videoPackQ.m_queue.empty() || m_status == PLAYSTATUE_FF_PAUSE)
 		{
+			Sleep(1);
 			continue;
 		}
 

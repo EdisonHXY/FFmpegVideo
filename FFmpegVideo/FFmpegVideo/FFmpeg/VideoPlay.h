@@ -16,6 +16,10 @@ public:
 	bool Stop();
 	void Play(void *lwnd, int width, int height);
 	
+
+	//ÔÝÍ£ »Ö¸´
+	void ControlPlayPause(bool bPause);
+
 	PLAYSTATUE_FF GetStatus();
 	void RefreshVideo(double dtime);
 

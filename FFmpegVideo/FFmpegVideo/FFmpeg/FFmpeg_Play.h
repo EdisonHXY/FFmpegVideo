@@ -29,6 +29,14 @@ public:
 	void Stop();
 	//暂停
 	void Pause();
+	//继续播放
+	void ContinuePlay();
+
+	//循环播放控制
+	void SetLoopStatus(bool bOpen);
+
+	//获取 当前状态
+	PLAYSTATUE_FF GetPlayStatus();
 private:
 	AVFormatContext *m_pFormatCtx;
 	CVideoPlay m_videoPlay;
@@ -40,6 +48,9 @@ private:
 	bool m_bStop;
 	fStatusPlayCallBack m_statusCB;
 	void *m_statusCBParam;
+	PLAYSTATUE_FF m_currentStatus;
+
+
 private:
 	bool OpenUrl(const char *szFileUrl);
 private:
@@ -47,8 +58,13 @@ private:
 
 private:
 	static int ThreadPlay(void *arg); 
-	void ExectPlayURL();
+	int ExectPlayURL();
 	static int decode_thread(void *arg);
 	void ExectDecode();
+private:
+	bool m_playLoop;
+
+
+
 };
 

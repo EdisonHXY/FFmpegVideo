@@ -18,6 +18,9 @@ public:
 	//Í£Ö¹
 	bool Stop();
 
+	//ÔÝÍ£ »Ö¸´
+	void ControlPlayPause(bool bPause);
+
 	//»ñÈ¡×´Ì¬
 	PLAYSTATUE_FF GetStatus();
 
