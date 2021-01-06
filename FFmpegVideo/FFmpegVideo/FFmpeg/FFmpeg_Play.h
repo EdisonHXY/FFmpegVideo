@@ -14,14 +14,18 @@ extern "C"
 using namespace std;
 
 typedef void(*fStatusPlayCallBack)(PLAYSTATUE_FF ss, void *lParam);
+typedef void(*fPlayProcessCallBack)(int nCurrentTime, int nTotalTime, void *lParam);
 class CFFmpeg_Play
 {
 public:
 	CFFmpeg_Play();
 	~CFFmpeg_Play();
 
-	//设置回调
+	//设置状态回调
 	void SetStausCall(fStatusPlayCallBack cb, void *lParm);
+
+	//设置进度回调
+	void SetPlayProcessCall(fPlayProcessCallBack cb, void *lPram);
 
 	//播放
 	int Play(const char *szFileUrl, void *lwnd, CRect wndRc);
@@ -37,6 +41,10 @@ public:
 
 	//获取 当前状态
 	PLAYSTATUE_FF GetPlayStatus();
+
+	//获取文件时长 需要先调用Play
+	double GetPlayDuration();
+
 private:
 	AVFormatContext *m_pFormatCtx;
 	CVideoPlay m_videoPlay;
@@ -50,7 +58,10 @@ private:
 	void *m_statusCBParam;
 	PLAYSTATUE_FF m_currentStatus;
 
+	fPlayProcessCallBack m_processCB;
+	void* m_processCBParam;
 
+	int m_totalTimeLength;
 private:
 	bool OpenUrl(const char *szFileUrl);
 private:

@@ -17,6 +17,9 @@ CAudioPlay::CAudioPlay() :BUFFER_SIZE(192000)
 
 	m_status = PLAYSTATUE_FF_STOP;
 	m_stopLock = SDL_CreateMutex();
+
+
+
 }
 
 
@@ -101,7 +104,6 @@ double CAudioPlay::GetAudioClock()
 	int bytes_per_sec = m_stream->codec->sample_rate * m_audio_ctx->channels * 2;
 
 	double pts = m_audio_clock - static_cast<double>(hw_buf_size) / bytes_per_sec;
-
 
 	return pts;
 }

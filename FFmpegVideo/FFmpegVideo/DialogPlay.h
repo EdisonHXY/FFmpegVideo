@@ -2,6 +2,7 @@
 #include "afxwin.h"
 #include "afxeditbrowsectrl.h"
 #include "CenterManager.h"
+#include "afxcmn.h"
 
 // CDialogPlay ¶Ô»°¿ò
 
@@ -27,7 +28,9 @@ public:
 	CButton m_playBtn;
 	CString m_iniPath;
 	afx_msg void OnBnClickedButtonPlay();
+	void SetTimeInfo(int nTime,bool bStart);
 	static void StatusPlayCallBack(PLAYSTATUE_FF ss, void *lParam);
+	static void ProcessPlayCallBack(int nCurrentTime, int nTotalTime, void *lParam);
 	CMFCEditBrowseCtrl m_fileUrlEdit;
 	CStatic m_showZone;
 	virtual BOOL OnInitDialog();
@@ -35,4 +38,7 @@ public:
 	afx_msg void OnBnClickedCheck1();
 	CButton m_pauseBtn;
 	afx_msg void OnBnClickedButton1();
+	CStatic m_timeLenStatic;
+	CSliderCtrl m_processSlider;
+	CStatic m_startTimeStatic;
 };

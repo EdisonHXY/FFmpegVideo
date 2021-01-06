@@ -30,6 +30,9 @@ void CDialogPlay::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_STATIC_SHOW, m_showZone);
 	DDX_Control(pDX, IDC_CHECK1, m_loopBtn);
 	DDX_Control(pDX, IDC_BUTTON1, m_pauseBtn);
+	DDX_Control(pDX, IDC_STATIC_Time, m_timeLenStatic);
+	DDX_Control(pDX, IDC_SLIDER1, m_processSlider);
+	DDX_Control(pDX, IDC_STATIC_Time2, m_startTimeStatic);
 }
 
 
@@ -80,24 +83,75 @@ void CDialogPlay::OnBnClickedButtonPlay()
 	
 
 }
+
+void CDialogPlay::SetTimeInfo(int nTime, bool bStart)
+{
+	CString strTime = "00:00:00";
+	if (nTime  > 0)
+	{
+		int nHour = nTime / 3600;
+		int nMin = nTime % 3600 / 60;
+		int  nSec = nTime % 3600 % 60;
+
+		strTime.Format("%02d:%02d:%02d", nHour, nMin, nSec);
+
+	}
+	if (bStart)
+	{
+		m_startTimeStatic.SetWindowText(strTime);
+	}
+	else
+	{
+		m_timeLenStatic.SetWindowText(strTime);
+	}
+	
+
+
+}
+
 void CDialogPlay::StatusPlayCallBack(PLAYSTATUE_FF ss, void *lParam)
 {
 	CDialogPlay *p = (CDialogPlay*)lParam;
 	switch (ss)
 	{
 	case PLAYSTATUE_FF_ING:
+	{	
 		p->m_playBtn.SetWindowText("停止");
 		p->m_pauseBtn.ShowWindow(TRUE);
+		int nTime = CCenterManager::GetInstance()->GetPlayDuration();
+		p->SetTimeInfo(nTime,false);
+		//初始化 进度条
+		p->m_processSlider.SetRange(0, nTime);
+		
 		break;
+	}
 	case PLAYSTATUE_FF_STOP:
 	case PLAYSTATUE_FF_PAUSE:
 	case PLAYSTATUE_FF_Finish:
+	{
 		p->m_playBtn.SetWindowText("播放");
 		p->m_pauseBtn.ShowWindow(false);
+		if (ss != PLAYSTATUE_FF_PAUSE)
+		{
+			p->SetTimeInfo(0, false);
+			p->SetTimeInfo(0, true);
+			p->m_processSlider.SetPos(0);
+		}
+	
+		
 		break;
+	}
 	default:
 		break;
 	}
+}
+
+void CDialogPlay::ProcessPlayCallBack(int nCurrentTime, int nTotalTime, void *lParam)
+{
+	CDialogPlay *p = (CDialogPlay*)lParam;
+
+	p->m_processSlider.SetPos(nCurrentTime);
+	p->SetTimeInfo(nCurrentTime, true);
 }
 
 BOOL CDialogPlay::OnInitDialog()
@@ -122,6 +176,7 @@ BOOL CDialogPlay::OnInitDialog()
 	m_fileUrlEdit.SetWindowText(str);
 
 	CCenterManager::GetInstance()->SetStausCall(StatusPlayCallBack, this);
+	CCenterManager::GetInstance()->SetPlayProcessCall(ProcessPlayCallBack, this);
 
 	m_tipEdit.SetWindowText("可播放本地文件\r    udp://@224.3.1.1:1234\r\nrtsp://10.0.1.186");
 	m_pauseBtn.ShowWindow(false);

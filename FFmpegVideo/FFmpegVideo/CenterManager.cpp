@@ -22,6 +22,11 @@ void CCenterManager::SetStausCall(fStatusPlayCallBack cb, void *lParm)
 	m_play.SetStausCall(cb, lParm);
 }
 
+void CCenterManager::SetPlayProcessCall(fPlayProcessCallBack cb, void *lPram)
+{
+	return m_play.SetPlayProcessCall(cb, lPram);
+}
+
 int CCenterManager::Play(const char *szFileUrl, void *lwnd, CRect wndRc)
 {
 	return m_play.Play(szFileUrl, lwnd, wndRc);
@@ -50,4 +55,9 @@ void CCenterManager::SetLoopStatus(bool bOpen)
 PLAYSTATUE_FF CCenterManager::GetPlayStatus()
 {
 	return m_play.GetPlayStatus();
+}
+
+double CCenterManager::GetPlayDuration()
+{
+	return m_play.GetPlayDuration();
 }

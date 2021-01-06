@@ -10,6 +10,9 @@ CFFmpeg_Play::CFFmpeg_Play()
 	m_statusCBParam = nullptr;
 	m_playLoop = false;
 	m_currentStatus = PLAYSTATUE_FF_STOP;
+	m_processCB = 0;
+	m_processCBParam = 0;
+	m_totalTimeLength = 0;
 }
 
 
@@ -22,6 +25,12 @@ void CFFmpeg_Play::SetStausCall(fStatusPlayCallBack cb, void *lParm)
 {
 	m_statusCB = cb;
 	m_statusCBParam = lParm;
+}
+
+void CFFmpeg_Play::SetPlayProcessCall(fPlayProcessCallBack cb, void *lPram)
+{
+	m_processCB = cb;
+	m_processCBParam = lPram;
 }
 
 int CFFmpeg_Play::Play(const char *szFileUrl, void *lwnd, CRect wndRc)
@@ -79,6 +88,7 @@ bool CFFmpeg_Play::OpenUrl(const char *szFileUrl)
 	if (avformat_find_stream_info(m_pFormatCtx, nullptr) < 0)
 		return false;
 
+	m_totalTimeLength = m_pFormatCtx->duration / 1000000;
 	for (uint32_t i = 0; i < m_pFormatCtx->nb_streams; i++)
 	{
 		if (m_pFormatCtx->streams[i]->codec->codec_type == AVMEDIA_TYPE_AUDIO && m_audioPlay.m_stream_index < 0)
@@ -124,6 +134,7 @@ bool CFFmpeg_Play::OpenUrl(const char *szFileUrl)
 
 void CFFmpeg_Play::DoExit()
 {
+	m_totalTimeLength = 0;
 	m_bStop = true;
 	m_videoPlay.Stop();
 	m_audioPlay.Stop();
@@ -159,6 +170,11 @@ int CFFmpeg_Play::ThreadPlay(void *arg)
 	return 0;
 }
 
+double CFFmpeg_Play::GetPlayDuration()
+{
+	return m_totalTimeLength;
+}
+
 int CFFmpeg_Play::ExectPlayURL()
 {
 	bool bRet = false;
@@ -166,7 +182,7 @@ int CFFmpeg_Play::ExectPlayURL()
 	do
 	{
 		av_register_all();
-		int nRet = SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_TIMER);
+		SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_TIMER);
 		//打开文件
 		bRet = OpenUrl(m_fileURL.c_str());
 		if (!bRet)
@@ -210,14 +226,22 @@ int CFFmpeg_Play::ExectPlayURL()
 				nRet = -5;
 				return nRet;
 			case FF_REFRESH_EVENT:
+			{
 				if ((m_audioPlay.GetStatus() == PLAYSTATUE_FF_Finish))
 				{
 					SDL_CloseAudio();
 					bLoop = false;
 					break;
 				}
-				m_videoPlay.RefreshVideo(m_audioPlay.GetAudioClock());
+				double nPts = m_audioPlay.GetAudioClock();
+				if (m_processCB)
+				{
+					m_processCB(nPts, m_totalTimeLength, m_processCBParam);
+				}
+
+				m_videoPlay.RefreshVideo(nPts);
 				break;
+			}
 			case FF_ContinuPlay_EVENT:
 				m_audioPlay.ControlPlayPause(false);
 				m_videoPlay.ControlPlayPause(false);
