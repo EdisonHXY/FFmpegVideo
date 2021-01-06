@@ -45,6 +45,9 @@ public:
 	//获取文件时长 需要先调用Play
 	double GetPlayDuration();
 
+	//设置音量
+	void SetVolum(int nNum);
+
 private:
 	AVFormatContext *m_pFormatCtx;
 	CVideoPlay m_videoPlay;

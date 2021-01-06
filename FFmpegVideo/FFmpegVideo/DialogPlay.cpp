@@ -33,6 +33,7 @@ void CDialogPlay::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_STATIC_Time, m_timeLenStatic);
 	DDX_Control(pDX, IDC_SLIDER1, m_processSlider);
 	DDX_Control(pDX, IDC_STATIC_Time2, m_startTimeStatic);
+	DDX_Control(pDX, IDC_SLIDER2, m_volumSlider);
 }
 
 
@@ -40,6 +41,7 @@ BEGIN_MESSAGE_MAP(CDialogPlay, CDialogEx)
 	ON_BN_CLICKED(IDC_BUTTON_Play, &CDialogPlay::OnBnClickedButtonPlay)
 	ON_BN_CLICKED(IDC_CHECK1, &CDialogPlay::OnBnClickedCheck1)
 	ON_BN_CLICKED(IDC_BUTTON1, &CDialogPlay::OnBnClickedButton1)
+	ON_NOTIFY(NM_CUSTOMDRAW, IDC_SLIDER2, &CDialogPlay::OnNMCustomdrawSlider2)
 END_MESSAGE_MAP()
 
 
@@ -172,14 +174,24 @@ BOOL CDialogPlay::OnInitDialog()
 	m_iniPath = dir + "\\" + "play.ini";
 	CString str;
 	::GetPrivateProfileString("SYS", "PATH", "", str.GetBuffer(MAX_PATH), MAX_PATH, m_iniPath);
-
 	m_fileUrlEdit.SetWindowText(str);
+
+	str.ReleaseBuffer();
+	::GetPrivateProfileString("SYS", "volum", "128", str.GetBuffer(MAX_PATH), MAX_PATH, m_iniPath);
+	int nVolum = _ttoi(str);
+	m_volumSlider.SetRange(0, 128);
+	m_volumSlider.SetPos(nVolum);
 
 	CCenterManager::GetInstance()->SetStausCall(StatusPlayCallBack, this);
 	CCenterManager::GetInstance()->SetPlayProcessCall(ProcessPlayCallBack, this);
 
 	m_tipEdit.SetWindowText("可播放本地文件\r    udp://@224.3.1.1:1234\r\nrtsp://10.0.1.186");
 	m_pauseBtn.ShowWindow(false);
+
+
+
+
+
 	return TRUE;  // return TRUE unless you set the focus to a control
 				  // 异常: OCX 属性页应返回 FALSE
 }
@@ -199,4 +211,21 @@ void CDialogPlay::OnBnClickedButton1()
 {
 	// TODO: 在此添加控件通知处理程序代码
 	CCenterManager::GetInstance()->Pause();
+}
+
+
+void CDialogPlay::OnNMCustomdrawSlider2(NMHDR *pNMHDR, LRESULT *pResult)
+{
+	LPNMCUSTOMDRAW pNMCD = reinterpret_cast<LPNMCUSTOMDRAW>(pNMHDR);
+	// TODO: 在此添加控件通知处理程序代码
+	*pResult = 0;
+
+	int nVolum = m_volumSlider.GetPos();
+
+	CCenterManager::GetInstance()->SetVolum(nVolum);
+
+	CString str;
+	str.Format("%d", nVolum);
+	::WritePrivateProfileString("SYS", "volum", str, m_iniPath);
+
 }

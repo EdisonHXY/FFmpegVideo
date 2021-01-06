@@ -28,6 +28,9 @@ public:
 	//获取时钟
 	double GetAudioClock();
 
+	//设置音量
+	void SetVolum(int nNum);
+
 public:
 	const uint32_t BUFFER_SIZE;// 缓冲区的大小
 	CPackQueue m_audioq;
@@ -42,7 +45,7 @@ public:
 	PLAYSTATUE_FF m_status;
 	SDL_mutex* m_stopLock;
 
-
+	int m_currentVolum; //音量值-
 private:
 	static void audio_callback(void* userdata, Uint8 *stream, int len);
 	void HandleAudioData(Uint8 *stream, int len);

@@ -41,4 +41,6 @@ public:
 	CStatic m_timeLenStatic;
 	CSliderCtrl m_processSlider;
 	CStatic m_startTimeStatic;
+	afx_msg void OnNMCustomdrawSlider2(NMHDR *pNMHDR, LRESULT *pResult);
+	CSliderCtrl m_volumSlider;
 };

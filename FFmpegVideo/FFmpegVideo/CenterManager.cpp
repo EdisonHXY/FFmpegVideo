@@ -61,3 +61,8 @@ double CCenterManager::GetPlayDuration()
 {
 	return m_play.GetPlayDuration();
 }
+
+void CCenterManager::SetVolum(int nNum)
+{
+	return m_play.SetVolum(nNum);
+}

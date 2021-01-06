@@ -175,6 +175,22 @@ double CFFmpeg_Play::GetPlayDuration()
 	return m_totalTimeLength;
 }
 
+void CFFmpeg_Play::SetVolum(int nNum)
+{
+	//0-128
+	if (nNum < 0)
+	{
+		nNum = 0;
+	}
+	else if (nNum > 128)
+	{
+		nNum = 128;
+	}
+
+	m_audioPlay.SetVolum(nNum);
+
+}
+
 int CFFmpeg_Play::ExectPlayURL()
 {
 	bool bRet = false;

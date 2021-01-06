@@ -18,7 +18,7 @@ CAudioPlay::CAudioPlay() :BUFFER_SIZE(192000)
 	m_status = PLAYSTATUE_FF_STOP;
 	m_stopLock = SDL_CreateMutex();
 
-
+	m_currentVolum = SDL_MIX_MAXVOLUME;
 
 }
 
@@ -108,6 +108,11 @@ double CAudioPlay::GetAudioClock()
 	return pts;
 }
 
+void CAudioPlay::SetVolum(int nNum)
+{
+	m_currentVolum = nNum;
+}
+
 void CAudioPlay::audio_callback(void* userdata, Uint8 *stream, int len)
 {
 	CAudioPlay *p = (CAudioPlay*)userdata;
@@ -153,7 +158,7 @@ void CAudioPlay::HandleAudioData(Uint8 *stream, int len)
 		if (len1 > len) // 向设备发送的数据长度为len
 			len1 = len;
 
-		SDL_MixAudio(stream, m_audio_buff + m_audio_buff_index, len, SDL_MIX_MAXVOLUME);
+		SDL_MixAudio(stream, m_audio_buff + m_audio_buff_index, len, m_currentVolum);
 
 		len -= len1;
 		stream += len1;

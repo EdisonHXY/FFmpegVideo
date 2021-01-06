@@ -27,6 +27,10 @@ public:
 	PLAYSTATUE_FF GetPlayStatus();
 	//获取文件时长 需要先调用Play
 	double GetPlayDuration();
+
+	//设置音量
+	void SetVolum(int nNum);
+
 private:
 	CCenterManager();
 	CFFmpeg_Play m_play;
