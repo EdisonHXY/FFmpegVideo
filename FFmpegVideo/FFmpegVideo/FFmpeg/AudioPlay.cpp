@@ -38,7 +38,7 @@ bool CAudioPlay::Play()
 	desired.freq = m_audio_ctx->sample_rate;
 	desired.channels = m_audio_ctx->channels;
 	desired.format = AUDIO_S16SYS;
-	desired.samples = 1024;
+	desired.samples = m_audio_ctx->frame_size;
 	desired.silence = 0;
 	desired.userdata = this;
 	desired.callback = audio_callback;
