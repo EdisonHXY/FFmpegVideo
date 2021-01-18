@@ -25,7 +25,7 @@ public:
 	bool PopQueue(AVPacket *packet, bool block);
 	bool Clear();
 public:
-	std::queue<AVPacket> m_queue;
+	std::queue<AVPacket*> m_queue;
 	Uint32    m_nb_packets;
 	Uint32    m_size;
 	SDL_mutex *m_mutex;

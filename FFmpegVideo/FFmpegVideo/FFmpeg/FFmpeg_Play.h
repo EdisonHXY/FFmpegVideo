@@ -65,6 +65,10 @@ private:
 	void* m_processCBParam;
 
 	int m_totalTimeLength;
+
+	bool m_haveVideo;
+	bool m_haveAudio;
+
 private:
 	bool OpenUrl(const char *szFileUrl);
 private:

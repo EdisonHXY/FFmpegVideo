@@ -97,37 +97,47 @@ bool CFFmpeg_Play::OpenUrl(const char *szFileUrl)
 		if (m_pFormatCtx->streams[i]->codec->codec_type == AVMEDIA_TYPE_VIDEO && m_videoPlay.m_stream_index < 0)
 			m_videoPlay.m_stream_index = i;
 	}
-	if (m_videoPlay.m_stream_index < 0 || m_audioPlay.m_stream_index < 0)
+
+	m_haveVideo = m_videoPlay.m_stream_index >= 0;
+	m_haveAudio = m_audioPlay.m_stream_index >= 0;
+
+	if (m_videoPlay.m_stream_index < 0 && m_audioPlay.m_stream_index < 0)
 		return false;
 	
 
+	if (m_haveAudio)
+	{
+		// Fill audio state
+		AVCodec *pCodec = avcodec_find_decoder(m_pFormatCtx->streams[m_audioPlay.m_stream_index]->codec->codec_id);
+		if (!pCodec)
+			return false;
 
+		m_audioPlay.m_stream = m_pFormatCtx->streams[m_audioPlay.m_stream_index];
+		m_audioPlay.m_audio_ctx = avcodec_alloc_context3(pCodec);
+		if (avcodec_copy_context(m_audioPlay.m_audio_ctx, m_pFormatCtx->streams[m_audioPlay.m_stream_index]->codec) != 0)
+			return false;
 
-	// Fill audio state
-	AVCodec *pCodec = avcodec_find_decoder(m_pFormatCtx->streams[m_audioPlay.m_stream_index]->codec->codec_id);
-	if (!pCodec)
-		return false;
+		avcodec_open2(m_audioPlay.m_audio_ctx, pCodec, nullptr);
 
-	m_audioPlay.m_stream = m_pFormatCtx->streams[m_audioPlay.m_stream_index];
-	m_audioPlay.m_audio_ctx = avcodec_alloc_context3(pCodec);
-	if (avcodec_copy_context(m_audioPlay.m_audio_ctx, m_pFormatCtx->streams[m_audioPlay.m_stream_index]->codec) != 0)
-		return false;
+	}
 
-	avcodec_open2(m_audioPlay.m_audio_ctx, pCodec, nullptr);
+	if (m_haveVideo)
+	{
+		// Fill video state
+		AVCodec *pVCodec = avcodec_find_decoder(m_pFormatCtx->streams[m_videoPlay.m_stream_index]->codec->codec_id);
+		if (!pVCodec)
+			return false;
+		m_videoPlay.m_stream = m_pFormatCtx->streams[m_videoPlay.m_stream_index];
+		m_videoPlay.m_video_ctx = avcodec_alloc_context3(pVCodec);
+		if (avcodec_copy_context(m_videoPlay.m_video_ctx, m_pFormatCtx->streams[m_videoPlay.m_stream_index]->codec) != 0)
+			return false;
 
-	// Fill video state
-	AVCodec *pVCodec = avcodec_find_decoder(m_pFormatCtx->streams[m_videoPlay.m_stream_index]->codec->codec_id);
-	if (!pVCodec)
-		return false;
-	m_videoPlay.m_stream = m_pFormatCtx->streams[m_videoPlay.m_stream_index];
-	m_videoPlay.m_video_ctx = avcodec_alloc_context3(pVCodec);
-	if (avcodec_copy_context(m_videoPlay.m_video_ctx, m_pFormatCtx->streams[m_videoPlay.m_stream_index]->codec) != 0)
-		return false;
+		avcodec_open2(m_videoPlay.m_video_ctx, pVCodec, nullptr);
 
-	avcodec_open2(m_videoPlay.m_video_ctx, pVCodec, nullptr);
-
-	m_videoPlay.m_frame_timer = static_cast<double>(av_gettime()) / 1000000.0;
-	m_videoPlay.m_frame_last_delay = 40e-3;
+		m_videoPlay.m_frame_timer = static_cast<double>(av_gettime()) / 1000000.0;
+		m_videoPlay.m_frame_last_delay = 40e-3;
+	}
+	
 
 	return true;
 }
@@ -211,16 +221,23 @@ int CFFmpeg_Play::ExectPlayURL()
 		//读取文件里的内容
 		SDL_CreateThread(decode_thread, "", this); // 创建解码线程，读取packet到队列中缓存
 		
-												   //创建视频的线程进行播放
-		m_videoPlay.Play(m_showHand, m_showW, m_showH);
-
-												   //创建音频的线程进行播放
-		bRet = m_audioPlay.Play();
-		if (!bRet)
+		if (m_haveVideo)
 		{
-			nRet = -2;
-			break;
+			//创建视频的线程进行播放
+			m_videoPlay.Play(m_showHand, m_showW, m_showH);
 		}
+		
+		if (m_haveAudio)
+		{
+			//创建音频的线程进行播放
+			bRet = m_audioPlay.Play();
+			if (!bRet)
+			{
+				nRet = -2;
+				break;
+			}
+		}
+		
 		
 		 if (m_statusCB)
 		 {

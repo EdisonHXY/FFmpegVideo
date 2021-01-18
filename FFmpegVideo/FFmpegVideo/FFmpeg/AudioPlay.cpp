@@ -99,6 +99,10 @@ PLAYSTATUE_FF CAudioPlay::GetStatus()
 
 double CAudioPlay::GetAudioClock()
 {
+	if (m_stream == NULL)
+	{
+		return 0;
+	}
 
 	int hw_buf_size = m_audio_buff_size - m_audio_buff_index;
 	int bytes_per_sec = m_stream->codec->sample_rate * m_audio_ctx->channels * 2;
