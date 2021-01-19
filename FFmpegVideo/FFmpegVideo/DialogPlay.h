@@ -43,4 +43,8 @@ public:
 	CStatic m_startTimeStatic;
 	afx_msg void OnNMCustomdrawSlider2(NMHDR *pNMHDR, LRESULT *pResult);
 	CSliderCtrl m_volumSlider;
+	CButton m_playOnlyAudioBtn;
+	CButton m_playOnlyVideoBtn;
+	afx_msg void OnBnClickedCheck2();
+	afx_msg void OnBnClickedCheck3();
 };

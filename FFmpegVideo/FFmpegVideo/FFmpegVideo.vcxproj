@@ -204,6 +204,7 @@
     <ClInclude Include="CenterManager.h" />
     <ClInclude Include="DialogCodes.h" />
     <ClInclude Include="DialogPlay.h" />
+    <ClInclude Include="EditAddressDialog.h" />
     <ClInclude Include="FFmpegVideo.h" />
     <ClInclude Include="FFmpegVideoDlg.h" />
     <ClInclude Include="FFmpeg\AudioPlay.h" />
@@ -219,6 +220,7 @@
     <ClCompile Include="CenterManager.cpp" />
     <ClCompile Include="DialogCodes.cpp" />
     <ClCompile Include="DialogPlay.cpp" />
+    <ClCompile Include="EditAddressDialog.cpp" />
     <ClCompile Include="FFmpegVideo.cpp" />
     <ClCompile Include="FFmpegVideoDlg.cpp" />
     <ClCompile Include="FFmpeg\AudioPlay.cpp" />

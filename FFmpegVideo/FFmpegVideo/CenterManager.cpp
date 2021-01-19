@@ -27,9 +27,9 @@ void CCenterManager::SetPlayProcessCall(fPlayProcessCallBack cb, void *lPram)
 	return m_play.SetPlayProcessCall(cb, lPram);
 }
 
-int CCenterManager::Play(const char *szFileUrl, void *lwnd, CRect wndRc)
+int CCenterManager::Play(const char *szFileUrl, void *lwnd, CRect wndRc, bool enableAudio, bool enableVideo)
 {
-	return m_play.Play(szFileUrl, lwnd, wndRc);
+	return m_play.Play(szFileUrl, lwnd, wndRc,enableAudio,enableVideo);
 }
 
 void CCenterManager::Stop()

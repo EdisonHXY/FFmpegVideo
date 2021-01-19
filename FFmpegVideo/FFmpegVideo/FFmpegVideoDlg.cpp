@@ -64,7 +64,7 @@ void CFFmpegVideoDlg::DoDataExchange(CDataExchange* pDX)
 void CFFmpegVideoDlg::InitTabUI()
 {
 	m_tablCtrl.InsertItem(0, "播放");
-	m_tablCtrl.InsertItem(1, "转码");
+	m_tablCtrl.InsertItem(1, "6画面");
 
 	CRect rc;
 	m_tablCtrl.GetWindowRect(&rc);
@@ -135,6 +135,8 @@ BOOL CFFmpegVideoDlg::OnInitDialog()
 	//  执行此操作
 	SetIcon(m_hIcon, TRUE);			// 设置大图标
 	SetIcon(m_hIcon, FALSE);		// 设置小图标
+
+	CFFmpeg_Play::InitData();
 
 	// TODO: 在此添加额外的初始化代码
 	InitTabUI();

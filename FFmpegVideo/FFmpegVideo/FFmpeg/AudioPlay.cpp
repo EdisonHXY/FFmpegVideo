@@ -101,7 +101,7 @@ double CAudioPlay::GetAudioClock()
 {
 	if (m_stream == NULL)
 	{
-		return 0;
+		return -1;
 	}
 
 	int hw_buf_size = m_audio_buff_size - m_audio_buff_index;

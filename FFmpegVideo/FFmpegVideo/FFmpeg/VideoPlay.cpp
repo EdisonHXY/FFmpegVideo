@@ -113,8 +113,7 @@ void CVideoPlay::Play(void *lwnd, int width, int height)
 	avpicture_fill((AVPicture*)m_displayFrame, buffer, (AVPixelFormat)m_displayFrame->format, m_displayFrame->width, m_displayFrame->height);
 
 	m_decodThread = SDL_CreateThread(Decode, "", this);
- 
- 	ScheduleRefresh(40); // start display
+	m_showThread = SDL_CreateThread(ShowThread, "", this);
 
 	SDL_ShowWindow(m_window);
 }
@@ -152,28 +151,15 @@ PLAYSTATUE_FF CVideoPlay::GetStatus()
 
 void CVideoPlay::RefreshVideo(double dtime)
 {
-	if (m_status == PLAYSTATUE_FF_PAUSE)
-	{
-		ScheduleRefresh(100);
-		return;
-	}
-
-	if (m_stream_index < 0 || m_status != PLAYSTATUE_FF_ING)
-	{
-		ScheduleRefresh(100);
-		return;
-	}
-
-	
 	if (m_videoFrameQ.m_queue.empty())
 	{
 		//m_status = PLAYSTATUE_FF_STOP;
-		ScheduleRefresh(1);
+		SDL_Delay(1);
+		return;
 	}
-	else
-	{
 		SDL_LockMutex(m_stopLock);
 		m_videoFrameQ.PopQueue(&m_frame);
+
 		// 将视频同步到音频上，计算下一帧的延迟时间
 		double current_pts = *(double*)m_frame->opaque;
 		double delay = current_pts - m_frame_last_pts;
@@ -208,7 +194,15 @@ void CVideoPlay::RefreshVideo(double dtime)
 		if (actual_delay <= 0.010)
 			actual_delay = 0.010;
 
-		ScheduleRefresh(static_cast<int>(actual_delay * 1000 + 0.5));
+		//没有音频也不需要同步
+		if (dtime >= 0)
+		{
+			SDL_Delay(static_cast<int>(actual_delay * 1000 + 0.5));
+		}
+		else
+		{
+			SDL_Delay(40);
+		}
 
 		SwsContext *sws_ctx = sws_getContext(m_video_ctx->width, m_video_ctx->height, m_video_ctx->pix_fmt,
 			m_displayFrame->width, m_displayFrame->height, (AVPixelFormat)m_displayFrame->format, SWS_BILINEAR, nullptr, nullptr, nullptr);
@@ -224,10 +218,12 @@ void CVideoPlay::RefreshVideo(double dtime)
 		SDL_RenderCopy(m_renderer, m_bmp, &m_rect, &m_rect);
 		SDL_RenderPresent(m_renderer);
 
+	
 		sws_freeContext(sws_ctx);
+
 		av_frame_unref(m_frame);
 		SDL_UnlockMutex(m_stopLock);
-	}
+	
 	
 	
 }
@@ -239,31 +235,67 @@ int CVideoPlay::Decode(void *arg)
 	return 0;
 }
 
+int CVideoPlay::ShowThread(void *arg)
+{
+	CVideoPlay *p = (CVideoPlay*)arg;
+	p->HandleVideoShow();
+	return 0;
+}
+
+void CVideoPlay::HandleVideoShow()
+{
+	while (m_status != PLAYSTATUE_FF_STOP)
+	{
+		if (m_status == PLAYSTATUE_FF_PAUSE)
+		{
+			SDL_Delay(100);
+			continue;
+		}
+
+		if (m_stream_index < 0 || m_status != PLAYSTATUE_FF_ING)
+		{
+			SDL_Delay(100);
+			continue;
+		}
+
+		sdl_refresh_timer_cb(0, this);
+		SDL_Delay(40);
+
+	}
+}
+
 void CVideoPlay::HanldeDecode()
 {
 	AVFrame *frame = av_frame_alloc();
-
-	AVPacket packet;
+	AVPacket *packet = av_packet_alloc();
 	double pts;
 	while (m_status != PLAYSTATUE_FF_STOP)
 	{
-
+		
 		if (m_videoPackQ.m_queue.empty() || m_status == PLAYSTATUE_FF_PAUSE)
 		{
 			Sleep(1);
 			continue;
 		}
-
-		bool bRet = m_videoPackQ.PopQueue(&packet, true);
-
-		int ret = avcodec_send_packet(m_video_ctx, &packet);
+		
+		bool bRet = m_videoPackQ.PopQueue(packet, true);
+		
+	
+		int ret = avcodec_send_packet(m_video_ctx, packet);
 		if (ret < 0 && ret != AVERROR(EAGAIN) && ret != AVERROR_EOF)
+		{
+			av_packet_unref(packet);
 			continue;
-
+		}
+			
 		ret = avcodec_receive_frame(m_video_ctx, frame);
 		if (ret < 0 && ret != AVERROR_EOF)
+		{
+			av_packet_unref(packet);
 			continue;
-
+		}
+			
+		av_packet_unref(packet);
 		if ((pts = av_frame_get_best_effort_timestamp(frame)) == AV_NOPTS_VALUE)
 			pts = 0;
 
@@ -280,15 +312,10 @@ void CVideoPlay::HanldeDecode()
 
 		av_frame_unref(frame);
 	}
-
+	av_packet_free(&packet);
 	av_frame_free(&frame);
 }
 
-// 延迟delay ms后刷新video帧
-void CVideoPlay::ScheduleRefresh(int delay)
-{
-	SDL_AddTimer(delay, sdl_refresh_timer_cb, this);
-}
 
 uint32_t CVideoPlay::sdl_refresh_timer_cb(uint32_t interval, void *opaque)
 {

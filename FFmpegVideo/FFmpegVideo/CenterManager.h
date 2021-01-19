@@ -11,7 +11,7 @@ public:
 	void SetPlayProcessCall(fPlayProcessCallBack cb, void *lPram);
 
 	//²¥·Å
-	int Play(const char *szFileUrl, void *lwnd, CRect wndRc);
+	int Play(const char *szFileUrl, void *lwnd, CRect wndRc, bool enableAudio = true, bool enableVideo = true);
 	//Í£Ö¹
 	void Stop();
 	//ÔÝÍ£

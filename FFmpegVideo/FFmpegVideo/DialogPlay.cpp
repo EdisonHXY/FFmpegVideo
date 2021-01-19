@@ -34,6 +34,8 @@ void CDialogPlay::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_SLIDER1, m_processSlider);
 	DDX_Control(pDX, IDC_STATIC_Time2, m_startTimeStatic);
 	DDX_Control(pDX, IDC_SLIDER2, m_volumSlider);
+	DDX_Control(pDX, IDC_CHECK2, m_playOnlyAudioBtn);
+	DDX_Control(pDX, IDC_CHECK3, m_playOnlyVideoBtn);
 }
 
 
@@ -67,7 +69,11 @@ void CDialogPlay::OnBnClickedButtonPlay()
 		}
 		else
 		{
-			int nRet = CCenterManager::GetInstance()->Play(strUrl, m_showZone.GetSafeHwnd(), rc);
+
+			bool enableAudio = m_playOnlyAudioBtn.GetCheck();
+			bool enableVideo = m_playOnlyVideoBtn.GetCheck();
+
+			int nRet = CCenterManager::GetInstance()->Play(strUrl, m_showZone.GetSafeHwnd(), rc,enableAudio,enableVideo);
 
 			::WritePrivateProfileString("SYS", "PATH", strUrl, m_iniPath);
 		}
@@ -125,6 +131,8 @@ void CDialogPlay::StatusPlayCallBack(PLAYSTATUE_FF ss, void *lParam)
 		//初始化 进度条
 		p->m_processSlider.SetRange(0, nTime);
 		
+		p->m_playOnlyAudioBtn.EnableWindow(FALSE);
+		p->m_playOnlyVideoBtn.EnableWindow(FALSE);
 		break;
 	}
 	case PLAYSTATUE_FF_STOP:
@@ -138,6 +146,11 @@ void CDialogPlay::StatusPlayCallBack(PLAYSTATUE_FF ss, void *lParam)
 			p->SetTimeInfo(0, false);
 			p->SetTimeInfo(0, true);
 			p->m_processSlider.SetPos(0);
+		}
+		if (ss != PLAYSTATUE_FF_PAUSE)
+		{
+			p->m_playOnlyAudioBtn.EnableWindow(true);
+			p->m_playOnlyVideoBtn.EnableWindow(true);
 		}
 	
 		
@@ -190,7 +203,8 @@ BOOL CDialogPlay::OnInitDialog()
 
 
 
-
+	m_playOnlyAudioBtn.SetCheck(1);
+	m_playOnlyVideoBtn.SetCheck(1);
 
 	return TRUE;  // return TRUE unless you set the focus to a control
 				  // 异常: OCX 属性页应返回 FALSE
@@ -229,3 +243,4 @@ void CDialogPlay::OnNMCustomdrawSlider2(NMHDR *pNMHDR, LRESULT *pResult)
 	::WritePrivateProfileString("SYS", "volum", str, m_iniPath);
 
 }
+

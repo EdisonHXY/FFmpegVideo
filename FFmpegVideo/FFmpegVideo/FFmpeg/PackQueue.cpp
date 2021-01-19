@@ -20,14 +20,15 @@ CPackQueue::~CPackQueue()
 
 bool CPackQueue::PushQueue(const AVPacket *packet)
 {
-	AVPacket *pkt = av_packet_alloc();
-	if (av_packet_ref(pkt, packet) < 0)
+	AVPacket* p = av_packet_alloc();
+	int ret = av_packet_ref(p, packet);
+	if (ret < 0)
 		return false;
 
 	SDL_LockMutex(m_mutex);
-	m_queue.push(pkt);
+	m_queue.push(p);
 
-	m_size += pkt->size;
+	m_size += packet->size;
 	m_nb_packets++;
 
 	SDL_CondSignal(m_cond);
@@ -40,31 +41,22 @@ bool CPackQueue::PopQueue(AVPacket *packet, bool block)
 	bool ret = false;
 
 	SDL_LockMutex(m_mutex);
-	//while (true)
-	{
-		if (!m_queue.empty())
-		{
-			if (av_packet_ref(packet,m_queue.front()) < 0)
-			{
-				SDL_UnlockMutex(m_mutex);
-				return false;
-			}
-			AVPacket *pkt = m_queue.front();
 
-			m_queue.pop();
-			av_packet_free(&pkt);
-			m_nb_packets--;
-			m_size -= packet->size;
+	if (!m_queue.empty())
+	{
+		if (av_packet_ref(packet, m_queue.front()) < 0)
+		{
 			SDL_UnlockMutex(m_mutex);
-			return true;
+			return false;
 		}
-// 		else
-// 		{
-// 			SDL_CondWait(m_cond, m_mutex);
-// 
-// 		}
+		auto tmp = m_queue.front();
+		av_packet_free(&tmp);
+		m_queue.pop();
+		m_nb_packets--;
+		m_size -= packet->size;
+		SDL_UnlockMutex(m_mutex);
+		return true;
 	}
-	
 	
 	SDL_UnlockMutex(m_mutex);
 	return ret;

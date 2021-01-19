@@ -27,8 +27,8 @@ public:
 	//设置进度回调
 	void SetPlayProcessCall(fPlayProcessCallBack cb, void *lPram);
 
-	//播放
-	int Play(const char *szFileUrl, void *lwnd, CRect wndRc);
+	//播放 多路画面时 只能打开一路的音频 enableAudio
+	int Play(const char *szFileUrl, void *lwnd, CRect wndRc, bool enableAudio = true, bool enableVideo  = true);
 	//停止
 	void Stop();
 	//暂停
@@ -48,6 +48,15 @@ public:
 	//设置音量
 	void SetVolum(int nNum);
 
+	//获取地址
+	string GetPlayUrl();
+
+	//设置缓存的最大包数
+	void SetPacketNum(int nNum);
+
+	static void InitData();
+	static void UnInitData();
+
 private:
 	AVFormatContext *m_pFormatCtx;
 	CVideoPlay m_videoPlay;
@@ -57,6 +66,8 @@ private:
 	int m_showW;
 	int m_showH;
 	bool m_bStop;
+	bool m_controlEnableAudio;
+	bool m_controlEnableVideo;
 	fStatusPlayCallBack m_statusCB;
 	void *m_statusCBParam;
 	PLAYSTATUE_FF m_currentStatus;
@@ -68,7 +79,7 @@ private:
 
 	bool m_haveVideo;
 	bool m_haveAudio;
-
+	unsigned int m_readPacketMaxNum;
 private:
 	bool OpenUrl(const char *szFileUrl);
 private:

@@ -46,11 +46,14 @@ public:
 	PLAYSTATUE_FF m_status;
 	SDL_mutex* m_stopLock;
 	SDL_Thread *m_decodThread;
+	SDL_Thread *m_showThread;
 private:
 	double Synchronize(AVFrame *srcFrame, double pts);
 	static int Decode(void *arg);
+	static int ShowThread(void *arg);
+	void HandleVideoShow();
 	void HanldeDecode();
-	void ScheduleRefresh(int delay);
+	
 	static uint32_t sdl_refresh_timer_cb(uint32_t interval, void *opaque);
 
 };

@@ -60,6 +60,9 @@
     <ClInclude Include="FFmpeg\VideoPlay.h">
       <Filter>FFmpeg</Filter>
     </ClInclude>
+    <ClInclude Include="EditAddressDialog.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="FFmpegVideo.cpp">
@@ -94,6 +97,9 @@
     </ClCompile>
     <ClCompile Include="FFmpeg\VideoPlay.cpp">
       <Filter>FFmpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="EditAddressDialog.cpp">
+      <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

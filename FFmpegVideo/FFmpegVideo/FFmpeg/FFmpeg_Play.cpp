@@ -13,6 +13,7 @@ CFFmpeg_Play::CFFmpeg_Play()
 	m_processCB = 0;
 	m_processCBParam = 0;
 	m_totalTimeLength = 0;
+	m_readPacketMaxNum = 25;
 }
 
 
@@ -33,11 +34,13 @@ void CFFmpeg_Play::SetPlayProcessCall(fPlayProcessCallBack cb, void *lPram)
 	m_processCBParam = lPram;
 }
 
-int CFFmpeg_Play::Play(const char *szFileUrl, void *lwnd, CRect wndRc)
+int CFFmpeg_Play::Play(const char *szFileUrl, void *lwnd, CRect wndRc, bool enableAudio, bool enableVideo)
 {
 	m_fileURL = szFileUrl;
 	m_showH = wndRc.Height();
 	m_showHand = lwnd;
+	m_controlEnableAudio = enableAudio;
+	m_controlEnableVideo = enableVideo;
 	m_showW = wndRc.Width();
 	SDL_CreateThread(ThreadPlay, "", this);
 	return 0;
@@ -91,10 +94,10 @@ bool CFFmpeg_Play::OpenUrl(const char *szFileUrl)
 	m_totalTimeLength = m_pFormatCtx->duration / 1000000;
 	for (uint32_t i = 0; i < m_pFormatCtx->nb_streams; i++)
 	{
-		if (m_pFormatCtx->streams[i]->codec->codec_type == AVMEDIA_TYPE_AUDIO && m_audioPlay.m_stream_index < 0)
+		if (m_pFormatCtx->streams[i]->codec->codec_type == AVMEDIA_TYPE_AUDIO && m_audioPlay.m_stream_index < 0 && m_controlEnableAudio)
 			m_audioPlay.m_stream_index = i;
 
-		if (m_pFormatCtx->streams[i]->codec->codec_type == AVMEDIA_TYPE_VIDEO && m_videoPlay.m_stream_index < 0)
+		if (m_pFormatCtx->streams[i]->codec->codec_type == AVMEDIA_TYPE_VIDEO && m_videoPlay.m_stream_index < 0 && m_controlEnableVideo)
 			m_videoPlay.m_stream_index = i;
 	}
 
@@ -105,7 +108,7 @@ bool CFFmpeg_Play::OpenUrl(const char *szFileUrl)
 		return false;
 	
 
-	if (m_haveAudio)
+	if (m_haveAudio && m_controlEnableAudio)
 	{
 		// Fill audio state
 		AVCodec *pCodec = avcodec_find_decoder(m_pFormatCtx->streams[m_audioPlay.m_stream_index]->codec->codec_id);
@@ -121,7 +124,7 @@ bool CFFmpeg_Play::OpenUrl(const char *szFileUrl)
 
 	}
 
-	if (m_haveVideo)
+	if (m_haveVideo && m_controlEnableVideo)
 	{
 		// Fill video state
 		AVCodec *pVCodec = avcodec_find_decoder(m_pFormatCtx->streams[m_videoPlay.m_stream_index]->codec->codec_id);
@@ -153,7 +156,6 @@ void CFFmpeg_Play::DoExit()
 		avformat_close_input(&m_pFormatCtx);
 	}
 
-	SDL_Quit();
 }
 
 int CFFmpeg_Play::ThreadPlay(void *arg)
@@ -201,14 +203,35 @@ void CFFmpeg_Play::SetVolum(int nNum)
 
 }
 
+std::string CFFmpeg_Play::GetPlayUrl()
+{
+	return m_fileURL;
+}
+
+void CFFmpeg_Play::SetPacketNum(int nNum)
+{
+	m_readPacketMaxNum = nNum;
+}
+
+void CFFmpeg_Play::InitData()
+{
+	av_register_all();
+	SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_TIMER);
+}
+
+void CFFmpeg_Play::UnInitData()
+{
+
+	SDL_Quit();
+}
+
 int CFFmpeg_Play::ExectPlayURL()
 {
 	bool bRet = false;
 	int nRet = 0;
 	do
 	{
-		av_register_all();
-		SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_TIMER);
+		
 		//打开文件
 		bRet = OpenUrl(m_fileURL.c_str());
 		if (!bRet)
@@ -216,18 +239,19 @@ int CFFmpeg_Play::ExectPlayURL()
 			nRet = -1;
 			break;
 		}
+	
 		m_bStop = false;
 		m_currentStatus = PLAYSTATUE_FF_ING;
 		//读取文件里的内容
 		SDL_CreateThread(decode_thread, "", this); // 创建解码线程，读取packet到队列中缓存
 		
-		if (m_haveVideo)
+		if (m_haveVideo && m_controlEnableVideo)
 		{
 			//创建视频的线程进行播放
 			m_videoPlay.Play(m_showHand, m_showW, m_showH);
 		}
 		
-		if (m_haveAudio)
+		if (m_haveAudio && m_controlEnableAudio)
 		{
 			//创建音频的线程进行播放
 			bRet = m_audioPlay.Play();
@@ -320,16 +344,24 @@ void CFFmpeg_Play::ExectDecode()
 
 	while (!m_bStop)
 	{
-		//限制队列的数量
-// 		if (m_audioPlay.m_audioq.m_queue.size() > 500)
-// 		{
-// 			continue;
-// 		}
+
 		if (m_currentStatus != PLAYSTATUE_FF_ING)
 		{
 			Sleep(1);
 			continue;
 		}
+
+		//限制队列的数量
+		if (m_haveAudio && m_audioPlay.m_audioq.m_queue.size() > m_readPacketMaxNum)
+		{
+			SDL_Delay(10);
+			continue;
+		}else if (m_haveVideo && m_videoPlay.m_videoPackQ.m_queue.size() > m_readPacketMaxNum)
+		{
+			SDL_Delay(10);
+			continue;
+		}
+
 		int ret = av_read_frame(m_pFormatCtx, packet);
 		if (ret < 0)
 		{
@@ -347,16 +379,14 @@ void CFFmpeg_Play::ExectDecode()
 		if (packet->stream_index == m_audioPlay.m_stream_index) // audio stream
 		{
 			m_audioPlay.m_audioq.PushQueue(packet);
-			av_packet_unref(packet);
 		}
 
 		else if (packet->stream_index == m_videoPlay.m_stream_index) // video stream
 		{
 			m_videoPlay.m_videoPackQ.PushQueue(packet);
-			av_packet_unref(packet);
+			
 		}
-		else
-			av_packet_unref(packet);
+		av_packet_unref(packet);
 	}
 
 	av_packet_free(&packet);
