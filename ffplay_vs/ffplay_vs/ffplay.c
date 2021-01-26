@@ -22,7 +22,7 @@
  * @file
  * simple media player based on the FFmpeg libraries
  */
-
+#define  CONFIG_AVFILTER 1
 #include "config.h"
 #include <inttypes.h>
 #include <math.h>
@@ -1491,9 +1491,9 @@ static void toggle_mute(VideoState *is)
 
 static void update_volume(VideoState *is, int sign, double step)
 {
-    double volume_level = is->audio_volume ? (20 * log(is->audio_volume / (double)SDL_MIX_MAXVOLUME) / log(10)) : -1000.0;
-    int new_volume = lrint(SDL_MIX_MAXVOLUME * pow(10.0, (volume_level + sign * step) / 20.0));
-    is->audio_volume = av_clip(is->audio_volume == new_volume ? (is->audio_volume + sign) : new_volume, 0, SDL_MIX_MAXVOLUME);
+	double volume_level = is->audio_volume ? (20 * log(is->audio_volume / (double)SDL_MIX_MAXVOLUME) / log(10)) : -1000.0;
+	int new_volume = lrint(SDL_MIX_MAXVOLUME * pow(10.0, (volume_level + sign * step) / 20.0));
+	is->audio_volume = av_clip(is->audio_volume == new_volume ? (is->audio_volume + sign) : new_volume, 0, SDL_MIX_MAXVOLUME);
 }
 
 static void step_to_next_frame(VideoState *is)
@@ -3698,8 +3698,12 @@ int main(int argc, char **argv)
     show_banner(argc, argv, options);
 
     parse_options(NULL, argc, argv, options, opt_input_file);
-
-    if (!input_filename) {
+	//av_sync_type = AV_SYNC_AUDIO_MASTER;
+	//input_filename = "udp://@239.0.0.9:1234";
+	//input_filename = "https://apd-aa5b6060ec657420f7990812d66ad7de.v.smtcdns.com/mv.music.tc.qq.com/AibVwx4CfbYnnM8ibKNtlN00ic_SIildobpNpS1uxx9k/6B4FCF2D18714EAAA7DD50856F55B44600D72BB6810CA312F3FEDA1BA8CEA30FB1DDC519D477458EB6016C8EE112D46AZZqqmusic_default/1049_M0101885001kQmLr2zTvHG1001805204.f9844.mp4?fname=1049_M0101885001kQmLr2zTvHG1001805204.f9844.mp4";
+	input_filename = "rtmp://58.200.131.2:1935/livetv/cctv1";
+	//input_filename = "rtmp://58.200.131.2:1935/livetv/cctv6";
+	if (!input_filename) {
         show_usage();
         av_log(NULL, AV_LOG_FATAL, "An input file must be specified\n");
         av_log(NULL, AV_LOG_FATAL,
